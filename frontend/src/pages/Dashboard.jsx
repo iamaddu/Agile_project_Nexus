@@ -127,7 +127,7 @@ const s = {
   mentorBanner: { display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, background:'rgba(34,201,126,0.05)', border:'1.5px solid rgba(34,201,126,0.2)', borderRadius:14, padding:'16px 20px', marginBottom:16, flexWrap:'wrap' },
   mentorTitle: { color:'#22c97e', fontWeight:700, fontSize:14, marginBottom:8 },
   skillsRow: { display:'flex', flexWrap:'wrap', gap:6 },
-  howBanner: { display:'flex', alignItems:'center', gap:0, background:'#0a0a1a', border:'1.5px solid #1a1a35', borderRadius:12, padding:'14px 20px', marginBottom:24, flexWrap:'wrap', gap:4 },
+  howBanner: { display:'flex', alignItems:'center', gap:4, background:'#0a0a1a', border:'1.5px solid #1a1a35', borderRadius:12, padding:'14px 20px', marginBottom:24, flexWrap:'wrap' },
   howStep: { display:'flex', alignItems:'center', gap:8 },
   howNum: { width:22, height:22, borderRadius:'50%', background:'#6c63ff', color:'#fff', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
   howLabel: { fontSize:13, color:'#8888aa' },

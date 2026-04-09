@@ -69,6 +69,11 @@ export default function Quiz() {
                 : 'Score 60% or more to pass. Book another session to strengthen your knowledge!'}
             </p>
             <div style={s.resultActions}>
+              {result.passed && (
+                <button className="nx-btn" onClick={() => navigate(`/certificate/${sessionId}`)} style={{ padding:'12px 28px', background:'#f5c842', color:'#000' }}>
+                  🎓 View Certificate
+                </button>
+              )}
               <button className="nx-btn" onClick={() => navigate('/my-sessions')} style={{ padding:'12px 28px' }}>
                 Back to Sessions →
               </button>

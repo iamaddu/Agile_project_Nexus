@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import Login from './pages/Login';
@@ -27,29 +27,31 @@ function Protected({ children }) {
   return user ? children : <Navigate to="/login" />;
 }
 
+const router = createBrowserRouter([
+  { path: '/', element: <Navigate to="/login" /> },
+  { path: '/login', element: <Login /> },
+  { path: '/register', element: <Register /> },
+  { path: '/forgot-password', element: <ForgotPassword /> },
+  { path: '/reset-password/:token', element: <ResetPassword /> },
+  { path: '/dashboard', element: <Protected><Dashboard /></Protected> },
+  { path: '/add-tokens', element: <Protected><AddTokens /></Protected> },
+  { path: '/find-mentor', element: <Protected><FindMentor /></Protected> },
+  { path: '/book/:mentorId', element: <Protected><BookSession /></Protected> },
+  { path: '/my-sessions', element: <Protected><MySessions /></Protected> },
+  { path: '/session/:sessionId', element: <Protected><SessionWorkspace /></Protected> },
+  { path: '/quiz/:sessionId', element: <Protected><Quiz /></Protected> },
+  { path: '/certificate/:sessionId', element: <Protected><Certificate /></Protected> },
+  { path: '/become-mentor', element: <Protected><BecomeMentor /></Protected> },
+  { path: '/profile', element: <Protected><Profile /></Protected> },
+  { path: '/admin', element: <Protected><Admin /></Protected> },
+], {
+  future: { v7_relativeSplatPath: true }
+});
+
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-          <Route path="/add-tokens" element={<Protected><AddTokens /></Protected>} />
-          <Route path="/find-mentor" element={<Protected><FindMentor /></Protected>} />
-          <Route path="/book/:mentorId" element={<Protected><BookSession /></Protected>} />
-          <Route path="/my-sessions" element={<Protected><MySessions /></Protected>} />
-          <Route path="/session/:sessionId" element={<Protected><SessionWorkspace /></Protected>} />
-          <Route path="/quiz/:sessionId" element={<Protected><Quiz /></Protected>} />
-          <Route path="/certificate/:sessionId" element={<Protected><Certificate /></Protected>} />
-          <Route path="/become-mentor" element={<Protected><BecomeMentor /></Protected>} />
-          <Route path="/profile" element={<Protected><Profile /></Protected>} />
-          <Route path="/admin" element={<Protected><Admin /></Protected>} />
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </AuthProvider>
   );
 }
