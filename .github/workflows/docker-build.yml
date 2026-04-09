@@ -1,0 +1,102 @@
+name: Docker Build & Push
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY: docker.io
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Backend Image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: false
+        tags: nexus-backend:latest
+        outputs: type=docker,dest=/tmp/backend.tar
+    
+    - name: Test Backend Image
+      run: |
+        docker load --input /tmp/backend.tar
+        docker images | grep nexus-backend
+        echo "✅ Backend image built successfully"
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Frontend Image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile
+        push: false
+        tags: nexus-frontend:latest
+        outputs: type=docker,dest=/tmp/frontend.tar
+    
+    - name: Test Frontend Image
+      run: |
+        docker load --input /tmp/frontend.tar
+        docker images | grep nexus-frontend
+        echo "✅ Frontend image built successfully"
+
+  compose-verification:
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Verify docker-compose.yml
+      run: |
+        echo "📋 Verifying docker-compose configuration..."
+        if command -v docker-compose &> /dev/null; then
+          docker-compose config --quiet && echo "✅ docker-compose.yml is valid"
+        else
+          echo "⚠️  docker-compose not available, skipping validation"
+        fi
+    
+    - name: Check Service Configuration
+      run: |
+        echo "🔍 Checking service configurations..."
+        grep -q "mongodb:" docker-compose.yml && echo "✅ MongoDB service configured"
+        grep -q "backend:" docker-compose.yml && echo "✅ Backend service configured"
+        grep -q "frontend:" docker-compose.yml && echo "✅ Frontend service configured"
+
+  build-status:
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend, compose-verification]
+    if: always()
+    
+    steps:
+    - name: Docker Build Status
+      run: |
+        if [ "${{ needs.build-backend.result }}" = "success" ] && [ "${{ needs.build-frontend.result }}" = "success" ]; then
+          echo "✅ All Docker images built successfully!"
+          echo "🚀 Ready for deployment"
+        else
+          echo "❌ Build failed"
+          exit 1
+        fi
