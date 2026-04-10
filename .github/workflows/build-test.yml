@@ -10,16 +10,6 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
     
-    services:
-      mongodb:
-        image: mongo:7.0
-        options: --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'" --health-interval 10s --health-timeout 5s --health-retries 5
-        ports:
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: admin123
-
     steps:
     - uses: actions/checkout@v3
     
@@ -30,24 +20,21 @@ jobs:
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
     
+    - name: Install System Dependencies for MongoDB Memory Server
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev libcrypto++-dev
+    
     - name: Install Backend Dependencies
       run: cd backend && npm ci
     
     - name: Run Backend Tests
-      run: cd backend && npm test -- --coverage --watchAll=false
+      run: cd backend && npm test -- --coverage --watchAll=false --testTimeout=30000
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
     
     - name: Check Backend Code Quality
       run: cd backend && npm run dev --dry-run 2>/dev/null || echo "Code structure verified"
-    
-    - name: Verify MongoDB Connection
-      run: |
-        cd backend
-        node -e "
-        const mongoose = require('mongoose');
-        mongoose.connect('mongodb://admin:admin123@localhost:27017/nexus_cognitive?authSource=admin')
-          .then(() => console.log('✅ MongoDB connection successful'))
-          .catch(err => { console.error('❌ MongoDB connection failed:', err); process.exit(1); });
-        "
 
   frontend-tests:
     runs-on: ubuntu-latest
@@ -66,8 +53,7 @@ jobs:
       run: cd frontend && npm ci
     
     - name: Run Frontend Tests
-      run: cd frontend && npm test -- --run --coverage
-    
+      run: cd frontend && npm run test:coverage
     - name: Build Frontend
       run: cd frontend && npm run build
     
