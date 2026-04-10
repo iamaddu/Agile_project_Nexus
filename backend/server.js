@@ -36,6 +36,11 @@ app.use('/api/quiz', require('./routes/quiz'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/admin', require('./routes/admin'));
 
+// Health check endpoint for Docker and monitoring
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', service: 'backend' });
+});
+
 // Socket.io for real-time features
 io.on('connection', (socket) => {
   socket.on('join-session', (sessionId) => {

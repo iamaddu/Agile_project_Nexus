@@ -24,6 +24,9 @@ WORKDIR /app
 # Install serve to run the built app
 RUN npm install -g serve
 
+# Install curl for Docker healthcheck validation
+RUN apk add --no-cache curl
+
 # Copy built app from builder stage
 COPY --from=builder /app/dist ./dist
 
