@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import App from '../App';
 
 // Mock the AuthContext
@@ -10,27 +9,19 @@ vi.mock('../context/AuthContext', () => ({
     user: null,
     login: vi.fn(),
     logout: vi.fn(),
-    isAuthenticated: false
+    isAuthenticated: false,
+    loading: false
   })
 }));
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(
-    <BrowserRouter>
-      {component}
-    </BrowserRouter>
-  );
-};
-
 describe('App Component', () => {
   it('renders the main app without crashing', () => {
-    renderWithRouter(<App />);
+    render(<App />);
     expect(document.body).toBeInTheDocument();
   });
 
   it('displays navigation elements', () => {
-    renderWithRouter(<App />);
-    // Check if basic elements are present
+    render(<App />);
     expect(document.body).toBeTruthy();
   });
 });
