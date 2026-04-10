@@ -23,7 +23,9 @@ jobs:
     - name: Install System Dependencies for MongoDB Memory Server
       run: |
         sudo apt-get update
-        sudo apt-get install -y libssl-dev libcrypto++-dev
+        sudo apt-get install -y libssl3 libc6 ca-certificates
+        # Try to install legacy OpenSSL 1.1 if available (for older MongoDB binaries)
+        sudo apt-get install -y libssl1.1 2>/dev/null || echo "libssl1.1 not available, using libssl3"
     
     - name: Install Backend Dependencies
       run: cd backend && npm ci
