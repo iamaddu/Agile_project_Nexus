@@ -1,8 +1,16 @@
 # ⚡ NEXUS COGNITIVE — Setup Guide
 
+## 📚 Documentation
+
+For comprehensive guides, see:
+- **[FULL_PROJECT_GUIDE.md](FULL_PROJECT_GUIDE.md)** — Complete setup, Docker, testing, and CI/CD instructions
+- **[CI_CD_FIX_DOCUMENTATION.md](CI_CD_FIX_DOCUMENTATION.md)** — GitHub Actions CI/CD pipeline details and fixes
+- **[DOCKER_SETUP.md](DOCKER_SETUP.md)** — Docker and Docker Compose configuration
+- **[CICD_GUIDE.md](CICD_GUIDE.md)** — CI/CD workflow explanation
+
 ## Prerequisites
 - Node.js v18+
-- MongoDB running locally (MongoDB Compass)
+- MongoDB running locally (MongoDB Compass) OR Docker Desktop for containerized setup
 
 ---
 
