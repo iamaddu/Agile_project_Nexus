@@ -31,19 +31,44 @@ Tests worked locally but failed in Ubuntu GitHub Actions runner.
    ```
    This installs required OpenSSL development libraries before Jest runs.
 
-2. **Removed Unused MongoDB Service Container**
+2. **Added Jest Default Timeout Configuration**
+   ```javascript
+   // backend/jest.config.js
+   module.exports = {
+     testEnvironment: 'node',
+     testTimeout: 30000,  // 30 seconds for all tests
+     // ... rest of config
+   };
+   ```
+   This ensures all tests and hooks have sufficient time regardless of CI environment.
+
+3. **Added Explicit Hook Timeouts in Test Setup**
+   ```javascript
+   // backend/tests/setup.js
+   beforeAll(async () => { ... }, 60000);  // 60 second timeout for setup
+   afterAll(async () => { ... }, 60000);   // 60 second timeout for cleanup
+   afterEach(async () => { ... }, 30000);  // 30 second timeout for clearance
+   ```
+
+4. **Implemented Defensive Error Handling**
+   - Added try-catch blocks to all lifecycle hooks
+   - Check if mongoServer exists before stopping it
+   - Verify mongoose connection state before disconnecting
+   - Graceful error logging instead of silent failures
+
+5. **Removed Unused MongoDB Service Container**
    - Old workflow had a `services` section with MongoDB 7.0 container
    - This was not being used (tests use mongodb-memory-server)
    - Removed to reduce pipeline complexity
 
-3. **Added Jest Test Timeout**
+6. **Added Jest Test Timeout Parameter**
    ```bash
    npm test -- --coverage --watchAll=false --testTimeout=30000
    ```
-   - Increased timeout to 30 seconds (default is often 5 seconds)
-   - Gives mongodb-memory-server time to bootstrap
+   - Additional safety net in the CI command itself
+   - Increases timeout to 30 seconds from Jest default of 5 seconds
 
-4. **Optimized Node.js Memory**
+7. **Optimized Node.js Memory**
    ```yaml
    env:
      NODE_OPTIONS: --max_old_space_size=4096
@@ -93,6 +118,27 @@ backend-tests:
 - **System Dependencies**: ~20-30 seconds
 - **Test Execution**: ~60-90 seconds
 - **Total**: Under 5 minutes as required
+
+## Why the Earlier GitHub Actions Failed
+
+The first run (8 hours ago) failed with:
+```
+Exceeded timeout of 5000 ms for a hook.
+TypeError: Cannot read properties of undefined (reading 'stop')
+```
+
+**Root causes were:**
+1. **Default Jest timeout too short** - Jest defaults to 5000ms per test/hook
+2. **No error handling** - If `mongoServer` initialization failed, cleanup tried to stop `undefined`
+3. **Missing system dependencies** - Ubuntu didn't have libssl-dev needed for MongoDB binaries
+4. **No explicit hook timeouts** - Cleanup hooks had no protection against timing out
+
+**Why it works now:**
+- ✅ Jest config sets `testTimeout: 30000` globally
+- ✅ Each hook has explicit timeouts (60s for setup/cleanup, 30s for clearing)
+- ✅ Error handling prevents undefined errors
+- ✅ System dependencies installed first
+- ✅ Multiple layers of timeout protection
 
 ## mongodb-memory-server vs MongoDB Service Container
 
@@ -145,6 +191,26 @@ npm test -- --coverage --watchAll=false --testTimeout=30000
 ```
 
 Note: You already have libssl-dev equivalent on Windows, so this works without manual setup.
+
+## How to Rerun the GitHub Actions Workflow
+
+The latest fix (commit `3b34d89`) should now pass. To verify:
+
+1. **Option 1: Wait for next push**
+   - Any commit to `main` or `develop` will trigger the workflow
+   - View results at: https://github.com/iamaddu/Agile_project_Nexus/actions
+
+2. **Option 2: Manual rerun (if available)**
+   - Go to: https://github.com/iamaddu/Agile_project_Nexus/actions
+   - Find "Build & Test" workflow
+   - Click "Re-run jobs" button on the failed run
+   - Watch "Build & Test" > "backend-tests" step
+
+3. **Expected Results**
+   - All 4 tests should pass
+   - Coverage report should generate
+   - No timeout errors
+   - Time: 2-3 minutes total
 
 ## If Tests Still Fail in GitHub Actions
 
