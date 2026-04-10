@@ -1,13 +1,15 @@
 const request = require('supertest');
 const express = require('express');
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
+
+process.env.JWT_SECRET = 'testsecret';
 
 // Mock the server setup
 jest.mock('../models/User', () => ({
   findById: jest.fn(),
   find: jest.fn(),
-  findByIdAndUpdate: jest.fn()
+  findByIdAndUpdate: jest.fn(),
+  findOne: jest.fn(),
+  create: jest.fn()
 }));
 
 jest.mock('../middleware/authMiddleware', () => (req, res, next) => {
@@ -30,20 +32,14 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'backend' });
 });
 
+const User = require('../models/User');
+
 describe('Backend API Tests', () => {
-  let mongoServer;
-
-  beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+  beforeEach(() => {
+    Object.values(User).forEach((fn) => {
+      if (fn && fn.mockReset) fn.mockReset();
+    });
   });
-
-  afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-  });
-
   describe('Health Check', () => {
     test('should return health status', async () => {
       const response = await request(app)
@@ -65,7 +61,10 @@ describe('Backend API Tests', () => {
         email: 'test@example.com'
       };
 
-      require('../models/User').findById.mockResolvedValue(mockUser);
+      const User = require('../models/User');
+      User.findById.mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockUser)
+      });
 
       const response = await request(app)
         .get('/api/users/me')
@@ -81,7 +80,12 @@ describe('Backend API Tests', () => {
         { _id: '2', name: 'Mentor 2', isMentor: true }
       ];
 
-      require('../models/User').find.mockResolvedValue(mockMentors);
+      const User = require('../models/User');
+      User.find.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          sort: jest.fn().mockResolvedValue(mockMentors)
+        })
+      });
 
       const response = await request(app)
         .get('/api/users/mentors')
@@ -100,12 +104,24 @@ describe('Backend API Tests', () => {
         password: 'password123'
       };
 
+      const User = require('../models/User');
+      User.findOne.mockResolvedValue(null);
+      User.create.mockResolvedValue({
+        _id: 'new-user-id',
+        name: 'New User',
+        email: 'new@example.com',
+        isMentor: false,
+        isAdmin: false
+      });
+
       const response = await request(app)
         .post('/api/auth/register')
         .send(userData)
         .expect(201);
 
-      expect(response.body.message).toContain('User registered successfully');
+      expect(response.body.user.name).toBe('New User');
+      expect(response.body.user.email).toBe('new@example.com');
+      expect(response.body.token).toBeDefined();
     });
   });
 });
