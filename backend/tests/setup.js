@@ -1,15 +1,23 @@
-const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
-
-let mongoServer;
 
 beforeAll(async () => {
   try {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    // Use MONGO_URI if provided (GitHub Actions with MongoDB service)
+    // Otherwise use mongodb-memory-server (local development)
+    const mongoUri = process.env.MONGO_URI;
+    
+    if (mongoUri) {
+      // CI environment: connect to MongoDB service container
+      await mongoose.connect(mongoUri);
+    } else {
+      // Local environment: use mongodb-memory-server
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      global.mongoServer = await MongoMemoryServer.create();
+      const uri = global.mongoServer.getUri();
+      await mongoose.connect(uri);
+    }
   } catch (error) {
-    console.error('Failed to start MongoDB Memory Server:', error);
+    console.error('Failed to connect to MongoDB:', error);
     throw error;
   }
 }, 60000);
@@ -19,8 +27,9 @@ afterAll(async () => {
     if (mongoose.connection.readyState) {
       await mongoose.disconnect();
     }
-    if (mongoServer) {
-      await mongoServer.stop();
+    // Only stop memory server if it was created (local environment)
+    if (global.mongoServer) {
+      await global.mongoServer.stop();
     }
   } catch (error) {
     console.error('Error during cleanup:', error);
