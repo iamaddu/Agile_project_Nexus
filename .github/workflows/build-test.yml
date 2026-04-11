@@ -9,42 +9,36 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
     services:
       mongodb:
         image: mongo:7.0
+        ports:
+          - 27017:27017
         options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: admin123
-
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-    
-    - name: Install Backend Dependencies
-      run: cd backend && npm ci
-    
-    - name: Run Backend Tests
-      run: cd backend && npm test -- --coverage --watchAll=false --testTimeout=30000
-      env:
-        MONGO_URI: mongodb://admin:admin123@localhost:27017/nexus_cognitive?authSource=admin
-        NODE_OPTIONS: --max_old_space_size=4096
-    
-    - name: Check Backend Code Quality
-      run: cd backend && npm run dev --dry-run 2>/dev/null || echo "Code structure verified"
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Run tests
+        working-directory: backend
+        run: npm run test:coverage
+        env:
+          MONGO_URI: mongodb://localhost:27017/nexus_test
+          JWT_SECRET: test_secret_key_for_ci
+          NODE_ENV: test
+        timeout-minutes: 5
 
   frontend-tests:
     runs-on: ubuntu-latest
